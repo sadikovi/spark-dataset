@@ -16,26 +16,13 @@
 
 package com.github.sadikovi.spark
 
-import scala.language.experimental.macros
-import scala.reflect.macros.Context
+import org.apache.spark.sql.Dataset
 
-class Elem[T] {
-  override def toString(): String = "Elem"
-}
-
-object Elem {
-  def filter[T](p: T => Boolean): T => Boolean = macro impl[T]
-
-  def impl[T: c.WeakTypeTag](c: Context)(p: c.Expr[T => Boolean]): c.Expr[T => Boolean] = {
-    import c.universe._
-    val t = show(p.tree)
-    println(s"Class=${t.getClass}, t=$t")
-    p
-  }
-}
-
-object Test {
-  def main(args: Array[String]): Unit = {
-    println("Hello!")
+package object implicits {
+  class DatasetExtensions[T](@transient val ds: Dataset[T]) {
+    def gfilter(func: T => Boolean): Dataset[T] = {
+      DatasetOperations.doFilterGenerate(func)
+      ds.filter(func)
+    }
   }
 }

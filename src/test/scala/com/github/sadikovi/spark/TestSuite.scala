@@ -18,10 +18,10 @@ package com.github.sadikovi.spark
 
 import org.scalatest.{FunSuite, Matchers}
 
+import com.github.sadikovi.spark.implicits._
+
 class TestSuite extends FunSuite with Matchers {
   test("run") {
-    Elem.filter((s: String) => {
-      s.isEmpty || s.length > 10
-    })
+    DatasetOperations.doFilterGenerate((s: String) => s.length > 2)
   }
 }
