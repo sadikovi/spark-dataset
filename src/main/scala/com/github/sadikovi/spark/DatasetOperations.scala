@@ -21,6 +21,8 @@ import java.io.File
 import scala.language.experimental.macros
 import scala.reflect.macros.Context
 
+import org.apache.spark.sql.Dataset
+
 object DatasetOperations {
   /** Return list of directories where generated data can be stored */
   private def getClassPaths(c: Context): Seq[File] = {
@@ -41,21 +43,26 @@ object DatasetOperations {
     s"$prefix.$name.$suffix"
   }
 
-  def doFilterGenerate[T](func: T => Boolean): T => Boolean = macro macro_doFilterGenerate[T]
+  def doFilterGenerate[T](ds: Dataset[T])(func: T => Boolean): Dataset[T] =
+    macro macro_doFilterGenerate[T]
 
-  def macro_doFilterGenerate[T: c.WeakTypeTag](c: Context)(
-      func: c.Expr[T => Boolean]): c.Expr[T => Boolean] = {
+  def macro_doFilterGenerate[T: c.WeakTypeTag](c: Context)(ds: c.Expr[Dataset[T]])(func: c.Expr[T => Boolean]): c.Expr[Dataset[T]] = {
     import c.universe._
     val t = show(func.tree)
+    // reconstruct function call
+    val funcCall = Select(ds.tree, newTermName("filter"))
+    val funcArg = List(func.tree)
+    val returnExpr = c.Expr[Dataset[T]](Apply(funcCall, funcArg))
+
     val path = getClassPath(c).map { file =>
       file.toString + File.separator + generateName(func) }
-    println(s"Class=${t.getClass}, t=$t, func=$func, path=$path")
+    println(s"Class=${returnExpr.getClass}, func=$func, path=$path")
     if (path.isEmpty) {
       println("Path is not defined, ignore writing to disk")
     } else {
       println(s"Writing to ${path.get}")
-      Utils.writeResource(path.get, t.getBytes)
+      // Utils.writeResource(path.get, t.getBytes)
     }
-    func
+    returnExpr
   }
 }

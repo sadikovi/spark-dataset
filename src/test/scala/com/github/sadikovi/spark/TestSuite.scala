@@ -16,12 +16,18 @@
 
 package com.github.sadikovi.spark
 
+import scala.reflect.runtime.universe._
 import org.scalatest.{FunSuite, Matchers}
-
+import org.apache.spark.sql.{Dataset, SparkSession}
 import com.github.sadikovi.spark.implicits._
 
 class TestSuite extends FunSuite with Matchers {
   test("run") {
-    DatasetOperations.doFilterGenerate((s: String) => s.length > 2)
+    val spark = SparkSession.builder().master("local[1]").getOrCreate()
+    val ds = spark.range(10)
+    val res = ds.gfilter((s: java.lang.Long) => s > 4)
+    println(s"Result = $res")
+    res.explain(true)
+    res.show()
   }
 }

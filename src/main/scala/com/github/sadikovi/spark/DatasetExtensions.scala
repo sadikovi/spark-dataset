@@ -16,13 +16,12 @@
 
 package com.github.sadikovi.spark
 
+import scala.language.experimental.macros
+import scala.reflect.macros.Context
 import org.apache.spark.sql.Dataset
 
 package object implicits {
-  class DatasetExtensions[T](@transient val ds: Dataset[T]) {
-    def gfilter(func: T => Boolean): Dataset[T] = {
-      DatasetOperations.doFilterGenerate(func)
-      ds.filter(func)
-    }
+  implicit class DatasetExtensions[T](@transient val ds: Dataset[T]) {
+    def gfilter(func: T => Boolean): Dataset[T] = macro DatasetOperations.macro_doFilterGenerate[T](null)
   }
 }
